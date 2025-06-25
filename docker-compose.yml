@@ -1,0 +1,52 @@
+
+services:
+  charge_request_service:
+    build: ./charge_request_service
+    container_name: charge_request_service
+    environment:
+      - LOAD_BALANCER_URL=http://load_balancer:6000
+    ports:
+      - "7000:7000"
+    depends_on:
+      - load_balancer
+
+  load_balancer:
+    build: ./load_balancer
+    container_name: load_balancer
+    environment:
+      - SUBSTATION_URLS=http://substation1:8001,http://substation2:8002
+    ports:
+      - "6000:6000"
+    depends_on:
+      - substation1
+      - substation2
+
+  substation1:
+    build: ./substation_service
+    container_name: substation1
+    environment:
+      - PORT=8001
+    ports:
+      - "8001:8001"
+
+  substation2:
+    build: ./substation_service
+    container_name: substation2
+    environment:
+      - PORT=8002
+    ports:
+      - "8002:8002"
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
